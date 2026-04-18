@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = "secret123"
 
-# Ensure folders exist
+# Ensure required folders exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs("static/reels", exist_ok=True)
 
@@ -29,7 +29,7 @@ def create():
         desc = request.form.get("text")
         input_files = []
 
-        # FIX: convert to string + safe folder creation
+        # Create unique folder
         folder_path = os.path.join(app.config['UPLOAD_FOLDER'], str(rec_id))
         os.makedirs(folder_path, exist_ok=True)
 
@@ -40,11 +40,11 @@ def create():
                 file.save(os.path.join(folder_path, filename))
                 input_files.append(filename)
 
-        # description file
+        # Save description
         with open(os.path.join(folder_path, "desc.txt"), "w") as f:
             f.write(desc if desc else "")
 
-        # input.txt for ffmpeg
+        # Create input.txt
         for fl in input_files:
             with open(os.path.join(folder_path, "input.txt"), "a") as f:
                 f.write(f"file '{fl}'\nduration 1\n")
@@ -55,12 +55,11 @@ def create():
 @app.route("/gallery")
 def gallery():
     reels_folder = "static/reels"
-    os.makedirs(reels_folder, exist_ok=True)   # FIX: prevent crash
+    os.makedirs(reels_folder, exist_ok=True)
     reels = os.listdir(reels_folder)
     return render_template("gallery.html", reels=reels)
 
 
-# DELETE REEL
 @app.route("/delete_reel/<reel_name>", methods=["POST"])
 def delete_reel(reel_name):
     reel_path = os.path.join("static/reels", reel_name)
@@ -72,11 +71,3 @@ def delete_reel(reel_name):
         flash("Reel not found", "error")
 
     return redirect(url_for("gallery"))
-
-
-# ❌ REMOVE app.run(debug=True)
-
-# ✅ Render / production compatible
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
